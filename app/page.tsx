@@ -29,7 +29,7 @@ const productsData = [
 export default function SmartlifeStore() {
   const [cart, setCart] = useState([]);
 
-  const addToCart = (product) => {
+  const addToCart = (product: any) => {
     setCart([...cart, product]);
   };
 
