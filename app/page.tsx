@@ -5,6 +5,13 @@ import { Button } from "@/components/ui/button";
 import { ShoppingCart } from "lucide-react";
 import { motion } from "framer-motion";
 
+type Product = {
+  id: number;
+  name: string;
+  price: number;
+  image: string;
+};
+
 const productsData = [
   {
     id: 1,
@@ -27,13 +34,13 @@ const productsData = [
 ];
 
 export default function SmartlifeStore() {
-  const [cart, setCart] = useState([]);
+  const [cart, setCart] = useState<Product[]>([]);
 
-  const addToCart = (product: any) => {
+  const addToCart = (product: Product) => {
     setCart([...cart, product]);
   };
 
-  const total = cart.reduce((sum, item) => sum + item.price, 0);
+  const total = cart.reduce((sum, item: Product) => sum + item.price, 0);
 
   return (
     <div className="min-h-screen bg-gray-50">
