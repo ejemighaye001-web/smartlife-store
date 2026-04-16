@@ -1,7 +1,7 @@
 "use client";
-import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
 import { ShoppingCart } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -12,48 +12,73 @@ type Product = {
   image: string;
 };
 
-const productsData = [
-  {
-    id: 1,
-    name: "Wireless Earbuds",
-    price: 45,
-    image: "/images/M28.jpg",
-  },
-  {
-    id: 2,
-    name: "Smart Watch",
-    price: 120,
-    image: "/images/ultra9.jpg",
-  },
-  {
-    id: 3,
-    name: "Bluetooth Speaker",
-    price: 60,
-    image: "/images/speaker.jpg",
-  },
-];
-
 export default function SmartlifeStore() {
+  const [products, setProducts] = useState<Product[]>([]);
   const [cart, setCart] = useState<Product[]>([]);
+  const [showCart, setShowCart] = useState(false);
+
+  const fetchProducts = async () => {
+    const { data, error } = await supabase.from("products").select("*");
+
+    if (error) {
+      console.log(error.message);
+      return;
+    }
+
+    setProducts((data as Product[]) || []);
+  };
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
 
   const addToCart = (product: Product) => {
     setCart([...cart, product]);
   };
 
-  const total = cart.reduce((sum, item: Product) => sum + item.price, 0);
+  const total = cart.reduce((sum, item) => sum + item.price, 0);
+
+  const checkout = async () => {
+    const name = prompt("Enter your name");
+    const phone = prompt("Enter your phone number");
+
+    if (!name || !phone) return;
+
+    const { error } = await supabase.from("orders").insert([
+      {
+        customer_name: name,
+        customer_phone: phone,
+        items: cart,
+        total: total,
+      },
+    ]);
+
+    if (error) {
+      alert("Order failed");
+      return;
+    }
+
+    alert("Order placed successfully!");
+    setCart([]);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
+
+      {/* HEADER */}
       <header className="flex justify-between items-center p-6 shadow bg-white">
         <h1 className="text-2xl font-bold">Smartlife Gadgets</h1>
-        <div className="flex items-center gap-2">
+
+        <div
+          className="flex items-center gap-2 cursor-pointer"
+          onClick={() => setShowCart(!showCart)}
+        >
           <ShoppingCart />
           <span>{cart.length}</span>
         </div>
       </header>
 
-      {/* Hero */}
+      {/* HERO */}
       <section className="text-center py-16">
         <motion.h2
           initial={{ opacity: 0, y: -20 }}
@@ -62,69 +87,105 @@ export default function SmartlifeStore() {
         >
           Upgrade Your Lifestyle with Smart Gadgets
         </motion.h2>
+
         <p className="text-gray-600">
           Discover the latest tech products at unbeatable prices.
         </p>
       </section>
 
-      {/* Products */}
+      {/* PRODUCTS */}
       <section className="grid md:grid-cols-3 gap-6 p-6 max-w-6xl mx-auto">
-        {productsData.map((product) => (
-          <Card key={product.id} className="rounded-2xl shadow">
-            <CardContent className="p-4 text-center">
+        {products.length === 0 ? (
+          <p className="col-span-3 text-center">No products found</p>
+        ) : (
+          products.map((product) => (
+            <div
+              key={product.id}
+              className="bg-white p-4 rounded-xl shadow"
+            >
+
               <img
                 src={product.image}
                 alt={product.name}
-                className="mx-auto mb-4"
+                className="mx-auto mb-4 h-40 object-cover"
               />
-              <h3 className="text-lg font-semibold">{product.name}</h3>
+
+              <h3 className="text-lg font-semibold">
+                {product.name}
+              </h3>
+
               <p className="text-gray-600">${product.price}</p>
-              <Button
-                className="mt-4 w-full"
+
+              {/* ADD TO CART */}
+              <button
                 onClick={() => addToCart(product)}
+                className="mt-3 w-full bg-black text-white py-2 rounded"
               >
                 Add to Cart
-              </Button>
-              <a
-  href="https://wa.me/2348149739044?text=Hello%20I%20want%20to%20buy%20this%20product"
-  target="_blank"
->
-  <button className="mt-2 w-full bg-green-600 text-white py-2 rounded-xl">
-    Order on WhatsApp
-  </button>
-</a>
-            </CardContent>
-          </Card>
-        ))}
-      </section>
+              </button>
 
-      {/* Cart Summary */}
-      <section className="p-6 max-w-3xl mx-auto">
-        <h2 className="text-2xl font-bold mb-4">Cart Summary</h2>
-        {cart.length === 0 ? (
-          <p>Your cart is empty</p>
-        ) : (
-          <div>
-            {cart.map((item, index) => (
-              <div key={index} className="flex justify-between py-2">
-                <span>{item.name}</span>
-                <span>${item.price}</span>
-              </div>
-            ))}
-            <hr className="my-2" />
-            <div className="flex justify-between font-bold">
-              <span>Total</span>
-              <span>${total}</span>
+              {/* WHATSAPP BUTTON */}
+              <a
+                href={`https://wa.me/2348149739044?text=${encodeURIComponent(
+                  `🛒 New Order\n\nProduct: ${product.name}\nPrice: $${product.price}`
+                )}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-2 w-full bg-green-500 text-white py-2 rounded block text-center"
+              >
+                Order on WhatsApp
+              </a>
+
             </div>
-            <Button className="mt-4 w-full">Checkout</Button>
-          </div>
+          ))
         )}
       </section>
 
-      {/* Footer */}
+      {/* CART PANEL */}
+      {showCart && (
+        <div className="fixed right-0 top-0 h-full w-80 bg-white shadow-lg p-4 z-50">
+
+          <h2 className="text-xl font-bold mb-4">Your Cart</h2>
+
+          {cart.length === 0 ? (
+            <p>Cart is empty</p>
+          ) : (
+            cart.map((item, index) => (
+              <div key={index} className="flex justify-between mb-2">
+                <span>{item.name}</span>
+                <span>${item.price}</span>
+              </div>
+            ))
+          )}
+
+          <hr className="my-3" />
+
+          <div className="font-bold mb-3">
+            Total: ${total}
+          </div>
+
+          <button
+            className="w-full bg-blue-600 text-white py-2 rounded"
+            onClick={checkout}
+          >
+            Checkout
+          </button>
+
+          <button
+            className="w-full mt-2 bg-gray-300 py-2 rounded"
+            onClick={() => setShowCart(false)}
+          >
+            Close
+          </button>
+
+        </div>
+      )}
+
+      {/* FOOTER */}
       <footer className="text-center py-6 text-sm text-gray-500">
         © {new Date().getFullYear()} Smartlife Gadgets
       </footer>
+
     </div>
   );
 }
