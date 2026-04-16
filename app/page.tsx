@@ -35,7 +35,7 @@ export default function SmartlifeStore() {
     fetchProducts();
   }, []);
 
-  // LOAD CART FROM STORAGE
+  // LOAD CART
   useEffect(() => {
     setCart(getCart());
   }, []);
@@ -47,7 +47,7 @@ export default function SmartlifeStore() {
     saveCart(updated);
   };
 
-  // REMOVE ITEM
+  // REMOVE FROM CART
   const removeFromCart = (index: number) => {
     const updated = cart.filter((_, i) => i !== index);
     setCart(updated);
@@ -84,7 +84,7 @@ export default function SmartlifeStore() {
               />
             </div>
 
-            {/* CART BUTTON */}
+            {/* CART */}
             <button
               onClick={() => setShowCart(!showCart)}
               className="bg-black text-white px-4 py-2 rounded-full flex items-center gap-2"
@@ -129,23 +129,32 @@ export default function SmartlifeStore() {
             className="bg-white rounded-2xl shadow-sm hover:shadow-xl overflow-hidden"
           >
 
-            <div className="h-52 bg-gray-100 overflow-hidden">
-              <img
-                src={product.image}
-                className="w-full h-full object-cover hover:scale-105 transition"
-              />
-            </div>
+            {/* CLICKABLE PRODUCT */}
+            <a href={`/product/${product.id}`}>
 
-            <div className="p-4">
-              <h3 className="font-semibold text-lg">{product.name}</h3>
+              <div className="h-52 bg-gray-100 overflow-hidden">
+                <img
+                  src={product.image}
+                  className="w-full h-full object-cover hover:scale-105 transition"
+                />
+              </div>
 
-              <p className="text-gray-500 mt-1">
-                ₦{product.price}
-              </p>
+              <div className="p-4">
+                <h3 className="font-semibold text-lg">{product.name}</h3>
+
+                <p className="text-gray-500 mt-1">
+                  ₦{product.price}
+                </p>
+              </div>
+
+            </a>
+
+            {/* ACTIONS */}
+            <div className="px-4 pb-4">
 
               <button
                 onClick={() => addToCart(product)}
-                className="w-full mt-4 bg-black text-white py-2 rounded-xl"
+                className="w-full mt-2 bg-black text-white py-2 rounded-xl"
               >
                 Add to Cart
               </button>
@@ -158,6 +167,7 @@ export default function SmartlifeStore() {
               >
                 Buy on WhatsApp
               </a>
+
             </div>
 
           </motion.div>
