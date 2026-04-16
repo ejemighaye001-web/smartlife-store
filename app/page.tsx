@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { ShoppingCart, Search } from "lucide-react";
 import { motion } from "framer-motion";
+import { getCart, saveCart } from "@/lib/cart";
 
 type Product = {
   id: number;
@@ -14,21 +15,43 @@ type Product = {
 
 export default function SmartlifeStore() {
   const [products, setProducts] = useState<Product[]>([]);
-  const [cart, setCart] = useState<Product[]>([]);
+  const [cart, setCart] = useState<any[]>([]);
   const [showCart, setShowCart] = useState(false);
   const [search, setSearch] = useState("");
 
+  // FETCH PRODUCTS
   useEffect(() => {
     const fetchProducts = async () => {
-      const { data } = await supabase.from("products").select("*");
+      const { data, error } = await supabase.from("products").select("*");
+
+      if (error) {
+        console.log(error.message);
+        return;
+      }
+
       setProducts(data || []);
     };
 
     fetchProducts();
   }, []);
 
+  // LOAD CART FROM STORAGE
+  useEffect(() => {
+    setCart(getCart());
+  }, []);
+
+  // ADD TO CART
   const addToCart = (product: Product) => {
-    setCart([...cart, product]);
+    const updated = [...cart, product];
+    setCart(updated);
+    saveCart(updated);
+  };
+
+  // REMOVE ITEM
+  const removeFromCart = (index: number) => {
+    const updated = cart.filter((_, i) => i !== index);
+    setCart(updated);
+    saveCart(updated);
   };
 
   const total = cart.reduce((sum, item) => sum + item.price, 0);
@@ -40,11 +63,11 @@ export default function SmartlifeStore() {
   return (
     <div className="min-h-screen bg-[#f6f7fb]">
 
-      {/* TOP NAV */}
+      {/* NAVBAR */}
       <header className="sticky top-0 z-50 bg-white/80 backdrop-blur border-b">
-        <div className="max-w-6xl mx-auto flex items-center justify-between px-4 py-3">
+        <div className="max-w-6xl mx-auto flex justify-between items-center px-4 py-3">
 
-          <h1 className="font-bold text-xl tracking-tight">
+          <h1 className="text-xl font-bold">
             Smartlife <span className="text-gray-500">Store</span>
           </h1>
 
@@ -54,17 +77,17 @@ export default function SmartlifeStore() {
             <div className="hidden md:flex items-center bg-gray-100 px-3 py-2 rounded-full">
               <Search size={16} className="text-gray-500" />
               <input
+                placeholder="Search..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search products..."
-                className="bg-transparent outline-none px-2 text-sm w-40"
+                className="bg-transparent outline-none px-2 text-sm"
               />
             </div>
 
-            {/* CART */}
+            {/* CART BUTTON */}
             <button
               onClick={() => setShowCart(!showCart)}
-              className="relative bg-black text-white px-4 py-2 rounded-full flex items-center gap-2"
+              className="bg-black text-white px-4 py-2 rounded-full flex items-center gap-2"
             >
               <ShoppingCart size={18} />
               <span>{cart.length}</span>
@@ -75,12 +98,11 @@ export default function SmartlifeStore() {
       </header>
 
       {/* HERO */}
-      <section className="max-w-6xl mx-auto px-4 py-14 text-center">
-
+      <section className="text-center py-14 px-4">
         <motion.h2
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-5xl font-extrabold tracking-tight"
+          className="text-5xl font-extrabold"
         >
           Premium Gadgets for Everyday Life
         </motion.h2>
@@ -89,21 +111,9 @@ export default function SmartlifeStore() {
           Discover high-quality tech products curated for modern living.
         </p>
 
-        {/* CATEGORY PILLS */}
-        <div className="flex justify-center flex-wrap gap-2 mt-6">
-          {["All", "Audio", "Smartwatch", "Accessories", "Tech"].map((c) => (
-            <span
-              key={c}
-              className="px-4 py-1 rounded-full bg-white shadow text-sm cursor-pointer hover:bg-black hover:text-white transition"
-            >
-              {c}
-            </span>
-          ))}
-        </div>
-
         <a
           href="/checkout"
-          className="inline-block mt-8 bg-black text-white px-6 py-3 rounded-full shadow-lg hover:scale-105 transition"
+          className="inline-block mt-6 bg-black text-white px-6 py-3 rounded-full"
         >
           Start Shopping
         </a>
@@ -116,20 +126,17 @@ export default function SmartlifeStore() {
           <motion.div
             key={product.id}
             whileHover={{ y: -5 }}
-            className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition"
+            className="bg-white rounded-2xl shadow-sm hover:shadow-xl overflow-hidden"
           >
 
-            {/* IMAGE */}
-            <div className="h-52 overflow-hidden bg-gray-100">
+            <div className="h-52 bg-gray-100 overflow-hidden">
               <img
                 src={product.image}
-                className="w-full h-full object-cover hover:scale-105 transition duration-300"
+                className="w-full h-full object-cover hover:scale-105 transition"
               />
             </div>
 
-            {/* CONTENT */}
             <div className="p-4">
-
               <h3 className="font-semibold text-lg">{product.name}</h3>
 
               <p className="text-gray-500 mt-1">
@@ -138,7 +145,7 @@ export default function SmartlifeStore() {
 
               <button
                 onClick={() => addToCart(product)}
-                className="w-full mt-4 bg-black text-white py-2 rounded-xl hover:bg-gray-800 transition"
+                className="w-full mt-4 bg-black text-white py-2 rounded-xl"
               >
                 Add to Cart
               </button>
@@ -151,26 +158,37 @@ export default function SmartlifeStore() {
               >
                 Buy on WhatsApp
               </a>
-
             </div>
+
           </motion.div>
         ))}
 
       </section>
 
-      {/* FLOATING CART */}
+      {/* CART DRAWER */}
       {showCart && (
-        <div className="fixed right-0 top-0 h-full w-80 bg-white shadow-2xl z-50 p-4">
+        <div className="fixed right-0 top-0 h-full w-80 bg-white shadow-2xl p-4 z-50">
 
-          <h2 className="text-xl font-bold mb-4">Cart</h2>
+          <h2 className="text-xl font-bold mb-4">Your Cart</h2>
 
           {cart.length === 0 ? (
-            <p className="text-gray-500">Your cart is empty</p>
+            <p className="text-gray-500">Cart is empty</p>
           ) : (
             cart.map((item, i) => (
-              <div key={i} className="flex justify-between text-sm mb-2">
-                <span>{item.name}</span>
-                <span>₦{item.price}</span>
+              <div key={i} className="flex justify-between items-center mb-2">
+
+                <div>
+                  <p className="text-sm">{item.name}</p>
+                  <p className="text-xs text-gray-500">₦{item.price}</p>
+                </div>
+
+                <button
+                  onClick={() => removeFromCart(i)}
+                  className="text-red-500 text-sm"
+                >
+                  Remove
+                </button>
+
               </div>
             ))
           )}
@@ -198,7 +216,7 @@ export default function SmartlifeStore() {
 
       {/* FOOTER */}
       <footer className="text-center py-10 text-sm text-gray-400">
-        © {new Date().getFullYear()} Smartlife Store. All rights reserved.
+        © {new Date().getFullYear()} Smartlife Store
       </footer>
 
     </div>
