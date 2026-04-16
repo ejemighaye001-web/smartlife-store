@@ -17,6 +17,7 @@ export default function SmartlifeStore() {
   const [cart, setCart] = useState<Product[]>([]);
   const [showCart, setShowCart] = useState(false);
 
+  // 📦 FETCH PRODUCTS
   const fetchProducts = async () => {
     const { data, error } = await supabase.from("products").select("*");
 
@@ -25,42 +26,24 @@ export default function SmartlifeStore() {
       return;
     }
 
-    setProducts((data as Product[]) || []);
+    setProducts(data || []);
   };
 
   useEffect(() => {
     fetchProducts();
   }, []);
 
+  // ➕ ADD TO CART
   const addToCart = (product: Product) => {
-    setCart([...cart, product]);
+    setCart((prev) => [...prev, product]);
+  };
+
+  // ❌ REMOVE FROM CART
+  const removeFromCart = (id: number) => {
+    setCart((prev) => prev.filter((item, index) => index !== id));
   };
 
   const total = cart.reduce((sum, item) => sum + item.price, 0);
-
-  const checkout = async () => {
-    const name = prompt("Enter your name");
-    const phone = prompt("Enter your phone number");
-
-    if (!name || !phone) return;
-
-    const { error } = await supabase.from("orders").insert([
-      {
-        customer_name: name,
-        customer_phone: phone,
-        items: cart,
-        total: total,
-      },
-    ]);
-
-    if (error) {
-      alert("Order failed");
-      return;
-    }
-
-    alert("Order placed successfully!");
-    setCart([]);
-  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -79,11 +62,11 @@ export default function SmartlifeStore() {
       </header>
 
       {/* HERO */}
-      <section className="text-center py-16">
+      <section className="text-center py-12">
         <motion.h2
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-4xl font-bold mb-4"
+          className="text-3xl font-bold mb-2"
         >
           Upgrade Your Lifestyle with Smart Gadgets
         </motion.h2>
@@ -91,6 +74,14 @@ export default function SmartlifeStore() {
         <p className="text-gray-600">
           Discover the latest tech products at unbeatable prices.
         </p>
+
+        {/* ✅ CHECKOUT BUTTON (CORRECT PLACE) */}
+        <a
+          href="/checkout"
+          className="mt-4 inline-block bg-blue-600 text-white px-6 py-2 rounded"
+        >
+          Go to Checkout
+        </a>
       </section>
 
       {/* PRODUCTS */}
@@ -99,10 +90,7 @@ export default function SmartlifeStore() {
           <p className="col-span-3 text-center">No products found</p>
         ) : (
           products.map((product) => (
-            <div
-              key={product.id}
-              className="bg-white p-4 rounded-xl shadow"
-            >
+            <div key={product.id} className="bg-white p-4 rounded-xl shadow">
 
               <img
                 src={product.image}
@@ -110,28 +98,23 @@ export default function SmartlifeStore() {
                 className="mx-auto mb-4 h-40 object-cover"
               />
 
-              <h3 className="text-lg font-semibold">
-                {product.name}
-              </h3>
+              <h3 className="text-lg font-semibold">{product.name}</h3>
+              <p className="text-gray-600">₦{product.price}</p>
 
-              <p className="text-gray-600">${product.price}</p>
-
-              {/* ADD TO CART */}
               <button
                 onClick={() => addToCart(product)}
-                className="mt-3 w-full bg-black text-white py-2 rounded"
+                className="mt-4 w-full bg-black text-white py-2 rounded"
               >
                 Add to Cart
               </button>
 
-              {/* WHATSAPP BUTTON */}
+              {/* WhatsApp Order */}
               <a
                 href={`https://wa.me/2348149739044?text=${encodeURIComponent(
-                  `🛒 New Order\n\nProduct: ${product.name}\nPrice: $${product.price}`
+                  `🛒 New Order\n\nProduct: ${product.name}\nPrice: ₦${product.price}`
                 )}`}
                 target="_blank"
-                rel="noopener noreferrer"
-                className="mt-2 w-full bg-green-500 text-white py-2 rounded block text-center"
+                className="mt-2 block text-center bg-green-500 text-white py-2 rounded"
               >
                 Order on WhatsApp
               </a>
@@ -141,7 +124,7 @@ export default function SmartlifeStore() {
         )}
       </section>
 
-      {/* CART PANEL */}
+      {/* CART */}
       {showCart && (
         <div className="fixed right-0 top-0 h-full w-80 bg-white shadow-lg p-4 z-50">
 
@@ -153,7 +136,14 @@ export default function SmartlifeStore() {
             cart.map((item, index) => (
               <div key={index} className="flex justify-between mb-2">
                 <span>{item.name}</span>
-                <span>${item.price}</span>
+                <span>₦{item.price}</span>
+
+                <button
+                  onClick={() => removeFromCart(index)}
+                  className="text-red-500 ml-2"
+                >
+                  x
+                </button>
               </div>
             ))
           )}
@@ -161,15 +151,15 @@ export default function SmartlifeStore() {
           <hr className="my-3" />
 
           <div className="font-bold mb-3">
-            Total: ${total}
+            Total: ₦{total}
           </div>
 
-          <button
-            className="w-full bg-blue-600 text-white py-2 rounded"
-            onClick={checkout}
+          <a
+            href="/checkout"
+            className="w-full block bg-blue-600 text-white py-2 rounded text-center"
           >
             Checkout
-          </button>
+          </a>
 
           <button
             className="w-full mt-2 bg-gray-300 py-2 rounded"
