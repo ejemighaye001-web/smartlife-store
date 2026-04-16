@@ -27,7 +27,19 @@ export default function AdminPage() {
     image: "",
     description: "",
   });
+<div className="grid grid-cols-2 gap-4 mb-6">
 
+  <div className="bg-white p-4 shadow rounded">
+    <p>Total Products</p>
+    <h2 className="text-xl font-bold">{totalProducts}</h2>
+  </div>
+
+  <div className="bg-white p-4 shadow rounded">
+    <p>Total Value</p>
+    <h2 className="text-xl font-bold">₦{totalValue}</h2>
+  </div>
+
+</div>
   const [editingId, setEditingId] = useState<number | null>(null);
 
   // 🔒 AUTH (REAL SUPABASE)
@@ -116,7 +128,12 @@ export default function AdminPage() {
     resetForm();
     fetchProducts();
   };
+const totalProducts = products.length;
 
+const totalValue = products.reduce(
+  (sum, p) => sum + p.price,
+  0
+);
   // 🧹 RESET
   const resetForm = () => {
     setForm({ name: "", price: "", image: "", description: "" });

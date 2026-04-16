@@ -42,7 +42,13 @@ export default function Checkout() {
     }
 
     localStorage.removeItem("cart");
-    alert("Order placed successfully!");
+    const message = `🛒 New Order
+Name: ${form.name}
+Phone: ${form.phone}
+Address: ${form.address}
+Total: ₦${total}`;
+
+window.open(`https://wa.me/2348149739044?text=${encodeURIComponent(message)}`);
     window.location.href = "/";
   };
 
